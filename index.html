@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIK — Rendering Software</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --fg: #ccc;
+            --fg-dim: #666;
+            --accent: #c00;
+            --border: #282828;
+            --surface: #141414;
+        }
+        [data-theme="light"] {
+            --bg: #fff;
+            --fg: #222;
+            --fg-dim: #888;
+            --accent: #c00;
+            --border: #ddd;
+            --surface: #f5f5f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scrollbar-gutter: stable; }
+        body {
+            font: 11px/1.6 monospace;
+            background: var(--bg);
+            color: var(--fg);
+        }
+        a { color: var(--fg); text-decoration: none; }
+        a:hover { color: var(--accent); }
+        code { background: var(--border); padding: 1px 4px; font-size: 10px; }
+        pre { background: var(--border); padding: 6px 8px; overflow-x: auto; font-size: 9px; margin: 4px 0; }
+
+        /* ── Layout ── */
+        .wrap { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+        /* ── Header ── */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 10px 0;
+        }
+        header .wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { display: flex; align-items: center; }
+        .logo img { height: 24px; width: auto; }
+        .logo-light { display: none; }
+        [data-theme="light"] .logo-dark { display: none; }
+        [data-theme="light"] .logo-light { display: block; }
+        nav { display: flex; align-items: center; gap: 16px; font-size: 10px; }
+        nav a, nav button.nav-link {
+            color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.5px;
+            text-decoration: none; background: none; border: none;
+            font: inherit; font-size: 10px; cursor: pointer; padding: 0;
+        }
+        nav a:hover, nav a.active,
+        nav button.nav-link:hover, nav button.nav-link.active { color: var(--fg); }
+        nav .sep { color: var(--border); }
+        .theme-toggle {
+            background: none; border: none; color: var(--fg-dim);
+            cursor: pointer; font-size: 12px; padding: 0;
+        }
+        .burger {
+            display: none;
+            background: none; border: none; color: var(--fg-dim);
+            cursor: pointer; font-size: 16px; padding: 0;
+        }
+
+        /* ── Section ── */
+        .section { padding: 16px 0 32px; }
+
+        /* ── Release badge ── */
+        .release-badge {
+            display: inline-flex; align-items: center;
+            font-size: 10px; text-decoration: none;
+            border: 1px solid var(--border); overflow: hidden;
+        }
+        .release-badge:hover { border-color: var(--fg-dim); color: var(--fg); }
+        .release-badge .release-label {
+            background: var(--border); color: var(--fg-dim);
+            padding: 2px 6px; display: flex; align-items: center; gap: 4px;
+        }
+        .release-badge .release-tag {
+            background: var(--surface); color: var(--fg);
+            padding: 2px 6px; border-left: 1px solid var(--border);
+        }
+
+        /* ── Home intro ── */
+        .home-intro {
+            margin-bottom: 24px;
+        }
+        .home-intro h1 {
+            font: inherit; font-size: 13px; margin-bottom: 4px;
+        }
+        .home-intro h1 span { color: var(--accent); }
+        .home-intro p { color: var(--fg-dim); }
+
+        /* ── Integration cards ── */
+        .integrations {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .integration-card {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .integration-card .card-img {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--fg-dim);
+            font-size: 9px;
+            flex-shrink: 0;
+        }
+        .integration-card .card-img img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+        .integration-card .card-body {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-top: none;
+            padding: 12px 14px;
+            flex: 1;
+        }
+        .integration-card .card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .integration-card .card-title .app-icon {
+            width: 18px; height: 18px;
+            flex-shrink: 0;
+        }
+        .integration-card .card-title h3 {
+            font: inherit; font-size: 11px;
+            color: var(--fg);
+        }
+        .integration-card .card-title .ver {
+            margin-left: auto;
+            font-size: 9px;
+            color: var(--fg-dim);
+            border: 1px solid var(--border);
+            padding: 1px 5px;
+        }
+        .home-note {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--accent);
+            background: var(--surface);
+            color: var(--fg-dim);
+            font-size: 10px;
+            line-height: 1.55;
+        }
+        .home-note strong { color: var(--fg); }
+        .integration-card .card-desc {
+            color: var(--fg-dim);
+            font-size: 10px;
+            margin-bottom: 8px;
+        }
+        .integration-card .cmd-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg);
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+        }
+        .integration-card .prompt {
+            color: var(--fg-dim); user-select: none;
+        }
+        .integration-card .cmd-line code {
+            background: none; padding: 0;
+            font-size: 9px; color: var(--fg);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .integration-card .cmd-line code .flag { color: var(--accent); }
+        .integration-card .copy-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--fg-dim);
+            font: inherit; font-size: 9px;
+            padding: 2px 8px; cursor: pointer;
+            margin-left: auto; flex-shrink: 0;
+            transition: all 0.15s;
+        }
+        .integration-card .copy-btn:hover {
+            border-color: var(--fg-dim); color: var(--fg);
+        }
+
+        /* ── Tab panels ── */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Gallery ── */
+        .demo {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--fg-dim); width: 100%;
+            aspect-ratio: 1280 / 720;
+        }
+        .gallery { display: flex; gap: 4px; margin-top: 6px; }
+        .thumb {
+            flex: 1; height: 48px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--fg-dim); font-size: 9px;
+            cursor: pointer; transition: border-color 0.15s;
+            overflow: hidden;
+        }
+        .thumb:hover { border-color: var(--fg-dim); }
+        .thumb.active { border-color: var(--accent); }
+
+        /* ── Compare slider ── */
+        .compare { position: relative; width: 100%; height: 100%; overflow: hidden; cursor: col-resize; user-select: none; }
+        .compare img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .compare .compare-after { z-index: 1; }
+        .compare .compare-before { z-index: 2; clip-path: inset(0 50% 0 0); }
+        .compare-handle { position: absolute; top: 0; left: 50%; width: 2px; height: 100%; background: var(--accent); z-index: 3; transform: translateX(-50%); pointer-events: none; }
+        .compare-handle::before {
+            content: '';
+            position: absolute; left: 50%; top: calc(50% - 9px);
+            transform: translateX(-50%);
+            width: 18px; height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+        /* ── Spec grid ── */
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px 24px; align-items: start;
+        }
+        .spec-section h3 {
+            font: inherit; font-size: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: var(--fg); margin-bottom: 8px; padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .spec-section ul { list-style: none; }
+        .spec-section li { padding: 2px 0; color: var(--fg-dim); }
+        .spec-section li::before { content: "• "; color: #4a4; }
+        .spec-section li.no::before { content: "✗ "; color: var(--accent); }
+        .spec-section li.no { color: var(--fg-dim); }
+        .spec-section li code {
+            float: right; font-size: 9px;
+            color: var(--fg-tertiary, #444);
+            background: none; padding: 0;
+        }
+
+        /* ── Docs ── */
+        .docs-grid {
+            display: grid;
+            grid-template-columns: 160px 1fr;
+            gap: 1px; background: var(--border);
+            min-height: 400px;
+        }
+        .docs-sidebar {
+            background: var(--surface);
+            padding: 16px 12px;
+        }
+        .docs-sidebar ul { list-style: none; }
+        .docs-sidebar li {
+            padding: 3px 0; font-size: 10px;
+            color: var(--fg-dim); cursor: pointer;
+        }
+        .docs-sidebar li:hover { color: var(--fg); }
+        .docs-sidebar li.active { color: var(--fg); }
+        .docs-sidebar li.active::before { content: "▸ "; color: var(--accent); }
+        .docs-sidebar h4 {
+            font: inherit; font-size: 9px;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: var(--fg-dim); margin: 12px 0 6px;
+            padding-bottom: 4px; border-bottom: 1px solid var(--border);
+        }
+        .docs-sidebar h4:first-child { margin-top: 0; }
+        .docs-content {
+            background: var(--bg);
+            padding: 20px 24px;
+            font-size: 11px; line-height: 1.7;
+        }
+        .docs-content h2 { font: inherit; font-size: 12px; margin-bottom: 12px; }
+        .docs-content h3 { font: inherit; font-size: 11px; color: var(--fg); margin: 16px 0 8px; }
+        .docs-content p { color: var(--fg-dim); margin: 8px 0; }
+        .docs-content .doc-img {
+            width: 100%; aspect-ratio: 16/9;
+            background: var(--surface); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--fg-dim); font-size: 10px; margin: 12px 0;
+        }
+        .docs-content .kv div {
+            padding: 2px 0; display: flex;
+            justify-content: space-between; font-size: 10px;
+        }
+        .docs-content .kv span:first-child { color: var(--fg-dim); }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 12px 0; margin-top: 32px;
+        }
+        footer .wrap {
+            display: flex; justify-content: space-between;
+            font-size: 10px; color: var(--fg-dim);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            .burger { display: block; }
+            nav {
+                display: none;
+                position: absolute;
+                top: 100%;
+                right: 0;
+                left: 0;
+                background: var(--bg);
+                border-bottom: 1px solid var(--border);
+                flex-direction: column;
+                padding: 12px 20px;
+                gap: 12px;
+                z-index: 10;
+            }
+            nav.open { display: flex; }
+            nav .sep { display: none; }
+            header .wrap { position: relative; }
+            .integrations { grid-template-columns: 1fr; }
+            .spec-grid { grid-template-columns: 1fr; }
+            .docs-grid { grid-template-columns: 1fr; }
+            .docs-sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ════════════════ HEADER ════════════════ -->
+<header>
+    <div class="wrap">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <a href="#" class="logo" onclick="navTab('home',document.querySelector('.nav-link'))">
+                <img src="img/logo_mik_white.png" alt="MIK" class="logo-dark">
+                <img src="img/logo_mik_red.png" alt="MIK" class="logo-light">
+            </a>
+            <span class="release-badge" style="cursor:default;">
+                <span class="release-label">
+                    <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zm0 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zm.75 3.25v3.5l2.5 1.5-.75 1.25-3-1.75V4.75h1.25z"/></svg>
+                    release
+                </span>
+                <span class="release-tag">v1.0.1</span>
+            </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <button class="burger" onclick="document.querySelector('nav').classList.toggle('open')">☰</button>
+            <button class="theme-toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'">◐</button>
+        </div>
+        <nav>
+            <button class="nav-link active" onclick="navTab('home', this)">Solace</button>
+            <button class="nav-link" onclick="navTab('gallery', this)">Gallery</button>
+            <button class="nav-link" onclick="navTab('specs', this)">Specification</button>
+            <button class="nav-link" onclick="navTab('docs', this)">Documentation</button>
+            <span class="sep">|</span>
+            <a href="mailto:contact@mikindustries.com">Contact</a>
+        </nav>
+    </div>
+</header>
+
+<!-- ════════════════ SOLACE ════════════════ -->
+<div class="wrap">
+    <div class="section">
+
+            <!-- Home -->
+            <div id="solace-home" class="tab-panel active" style="padding-top:12px;">
+                <div class="home-intro">
+                    <h1><span>Solace</span> — Hydra Renderer</h1>
+                    <p>Real-time path tracing for USD. Engineered for industrial scale.</p>
+                    <div class="home-note">
+                        <strong>Current availability.</strong> Solace is in early development and is offered exclusively as a <strong>B2B distributed renderer</strong> for studios and production pipelines running OpenUSD at scale. It is not yet sold as a consumer plug-in for Blender, Maya, Houdini or other DCC tools — the integrations shown below are reference targets used during development. Broader DCC distribution may follow in future releases. For partnership or evaluation inquiries, please get in touch via the Contact link above.
+                    </div>
+                </div>
+
+                <div class="integrations">
+                    <!-- usdview -->
+                    <div class="integration-card">
+                        <div class="card-img">
+                            <img src="img/usdview.jpg" alt="Solace in usdview">
+                        </div>
+                        <div class="card-body">
+                            <div class="card-title">
+                                    <img class="app-icon" src="img/usd_logo.png" alt="USD">
+                                <h3>usdview</h3>
+                                <span class="ver">OpenUSD 26.03</span>
+                            </div>
+                            <p class="card-desc">Native Hydra integration. Select Solace as the active renderer from the command line or the viewport menu.</p>
+                            <div class="cmd-line">
+                                <span class="prompt">$</span>
+                                <code>usdview scene.usd <span class="flag">--renderer Solace</span></code>
+                                <button class="copy-btn" onclick="copyCmd(this, 'usdview scene.usd --renderer Solace')">copy</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blender -->
+                    <div class="integration-card">
+                        <div class="card-img">
+                            <img src="img/blender.png" alt="Solace in Blender">
+                        </div>
+                        <div class="card-body">
+                            <div class="card-title">
+                                <img class="app-icon" src="img/logo_blender.png" alt="Blender">
+                                <h3>Blender</h3>
+                                <span class="ver">v5.0.1</span>
+                            </div>
+                            <p class="card-desc">USD Hydra render delegate for Blender. Enable Solace in the render engine dropdown to path trace directly in the viewport.</p>
+                        </div>
+                    </div>
+
+                    <!-- Maya -->
+                    <div class="integration-card">
+                        <div class="card-img">
+                            <img src="img/maya.jpg" alt="Solace in Maya">
+                        </div>
+                        <div class="card-body">
+                            <div class="card-title">
+                                <img class="app-icon" src="img/logo_maya.png" alt="Maya">
+                                <h3>Maya</h3>
+                                <span class="ver">2026.3</span>
+                            </div>
+                            <p class="card-desc">Hydra viewport integration for Autodesk Maya. Switch the viewport renderer to Solace for interactive path tracing of USD stages.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gallery -->
+            <div id="solace-gallery" class="tab-panel" style="padding-top:12px;">
+                <div class="demo" id="viewer">
+                    <iframe src="https://www.youtube.com/embed/ONntO5qSyeA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;"></iframe>
+                </div>
+                <div class="gallery">
+                    <div class="thumb active" data-type="video" onclick="selectMedia(this)">▶ video</div>
+                    <div class="thumb" data-type="compare" data-before="img/gallery/car_gi.png" data-after="img/gallery/car.png" onclick="selectMedia(this)"><img src="img/gallery/car.png" style="width:100%;height:100%;object-fit:cover;"></div>
+                    <div class="thumb" data-type="compare" data-before="img/gallery/warehouse_gi.png" data-after="img/gallery/warehouse.png" onclick="selectMedia(this)"><img src="img/gallery/warehouse.png" style="width:100%;height:100%;object-fit:cover;"></div>
+                    <div class="thumb" data-type="image" data-src="img/gallery/maya_robot.jpg" onclick="selectMedia(this)"><img src="img/gallery/maya_robot.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
+                    <div class="thumb" data-type="image" data-src="img/gallery/maya_viewport.jpg" onclick="selectMedia(this)"><img src="img/gallery/maya_viewport.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
+                </div>
+            </div>
+
+            <!-- Specification -->
+            <div id="solace-specs" class="tab-panel" style="padding-top:16px;">
+                <div class="spec-grid">
+                    <div class="spec-section">
+                        <h3>Geometry</h3>
+                        <ul>
+                            <li>Mesh <code>UsdGeomMesh</code></li>
+                            <li>Subdivision <code>subdivisionScheme</code></li>
+                            <li>Cube <code>UsdGeomCube</code></li>
+                            <li>Sphere <code>UsdGeomSphere</code></li>
+                            <li>Cone <code>UsdGeomCone</code></li>
+                            <li>Cylinder <code>UsdGeomCylinder</code></li>
+                            <li>Capsule <code>UsdGeomCapsule</code></li>
+                            <li class="no">Point cloud <code>UsdGeomPoints</code></li>
+                            <li>Geom subset <code>UsdGeomSubset</code></li>
+                            <li>Display color <code>primvars:displayColor</code></li>
+                        </ul>
+                    </div>
+                    <div class="spec-section">
+                        <h3>Instancing</h3>
+                        <ul>
+                            <li>Point instancer <code>UsdGeomPointInstancer</code></li>
+                            <li>Native instancing <code>instanceable</code></li>
+                        </ul>
+                    </div>
+                    <div class="spec-section">
+                        <h3>Materials</h3>
+                        <ul>
+                            <li>Preview surface <code>UsdPreviewSurface</code></li>
+                            <li class="no">MaterialX</li>
+                            <li class="no">MDL</li>
+                        </ul>
+                    </div>
+                    <div class="spec-section">
+                        <h3>Textures</h3>
+                        <ul>
+                            <li>UV coordinates <code>primvars:st</code></li>
+                            <li>UDIM tiling <code>UsdUVTexture</code></li>
+                        </ul>
+                    </div>
+                    <div class="spec-section">
+                        <h3>Lighting</h3>
+                        <ul>
+                            <li>Sphere light <code>UsdLuxSphereLight</code></li>
+                            <li>Rect light <code>UsdLuxRectLight</code></li>
+                            <li>Disk light <code>UsdLuxDiskLight</code></li>
+                            <li>Cylinder light <code>UsdLuxCylinderLight</code></li>
+                            <li>Distant light <code>UsdLuxDistantLight</code></li>
+                            <li>Dome light <code>UsdLuxDomeLight</code></li>
+                        </ul>
+                    </div>
+                    <div class="spec-section">
+                        <h3>Rendering</h3>
+                        <ul>
+                            <li>Camera <code>UsdGeomCamera</code></li>
+                            <li>AOV <code>color, primId, depth, neye, instanceId</code></li>
+                            <li>Animation <code>timeSamples</code></li>
+                            <li>Variant <code>UsdVariantSet</code></li>
+                            <li>Purpose <code>render, proxy, guide</code></li>
+                            <li>Visibility <code>UsdGeomImageable</code></li>
+                            <li class="no">Shading modes <code>HdRenderDelegate</code></li>
+                            <li class="no">Volumes <code>UsdVolVolume</code></li>
+                            <li class="no">Curves <code>UsdGeomBasisCurves</code></li>
+                            <li class="no">Skinning <code>UsdSkel</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation -->
+            <div id="solace-docs" class="tab-panel" style="padding-top:12px;">
+                <div class="docs-grid">
+                    <div class="docs-sidebar">
+                        <h4>Getting Started</h4>
+                        <ul>
+                            <li class="active" onclick="switchDoc('solace', 'install', this)">Installation</li>
+                            <li onclick="switchDoc('solace', 'requirements', this)">Requirements</li>
+                            <li onclick="switchDoc('solace', 'quickstart', this)">Quick Start</li>
+                        </ul>
+                        <h4>Materials</h4>
+                        <ul>
+                            <li onclick="switchDoc('solace', 'clearcoat', this)">Clearcoat</li>
+                            <li onclick="switchDoc('solace', 'opacity', this)">Opacity</li>
+                            <li onclick="switchDoc('solace', 'roughness', this)">Roughness</li>
+                        </ul>
+                        <h4>Samples</h4>
+                        <ul>
+                            <li onclick="switchDoc('solace', 'sample-viewer', this)">USD Viewer</li>
+                            <li onclick="switchDoc('solace', 'sample-benchmark', this)">Benchmark App</li>
+                        </ul>
+                    </div>
+                    <div class="docs-content" id="solace-docs-content">
+                        <h2>Installation</h2>
+                        <p>Solace ships as a Hydra render delegate plugin. Drop it into your USD plugin path and register.</p>
+                        <h3>1. Set the environment</h3>
+                        <pre>set PXR_PLUGINPATH_NAME=C:\path\to\solace\</pre>
+                        <h3>2. Verify registration</h3>
+<pre>from pxr import Plug
+Plug.Registry().GetAllPlugins()</pre>
+                        <p>You should see <code>Solace</code> listed among the available Hydra render delegates.</p>
+                        <h3>3. Select renderer</h3>
+<pre>renderIndex = HdRenderIndex.New(HdSolaceRendererPlugin(), [])
+# or via usdview: --renderer Solace</pre>
+                        <p>Renderer ID: <code>Solace</code></p>
+                    </div>
+                </div>
+            </div>
+    </div>
+</div>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer>
+    <div class="wrap">
+        <span>&copy; 2026 MIK Industries</span>
+        <span>Barcelona</span>
+    </div>
+</footer>
+
+<script>
+    /* ── Copy command ── */
+    function copyCmd(btn, text) {
+        navigator.clipboard.writeText(text || 'usdview scene.usd --renderer Solace');
+        btn.textContent = 'copied';
+        setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+    }
+
+    /* ── Nav tabs ── */
+    function navTab(tab, btn) {
+        document.querySelectorAll('nav .nav-link').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('solace-' + tab).classList.add('active');
+        document.querySelector('nav').classList.remove('open');
+        if (tab === 'gallery') {
+            const w = document.getElementById('compare-widget');
+            if (w && !w.dataset.init) { initCompare(w); w.dataset.init = '1'; }
+        }
+        window.scrollTo(0, 0);
+    }
+
+    /* ── Gallery ── */
+    function selectMedia(el) {
+        document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        const viewer = document.getElementById('viewer');
+        const type = el.dataset.type;
+        if (type === 'video') {
+            viewer.innerHTML = '<iframe src="https://www.youtube.com/embed/ONntO5qSyeA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;"></iframe>';
+        } else if (type === 'compare') {
+            viewer.innerHTML =
+                '<div class="compare" id="compare-widget">' +
+                    '<img class="compare-after" src="' + el.dataset.after + '">' +
+                    '<img class="compare-before" src="' + el.dataset.before + '">' +
+                    '<div class="compare-handle"></div>' +
+                '</div>';
+            initCompare(document.getElementById('compare-widget'));
+        } else {
+            viewer.innerHTML = '<img src="' + el.dataset.src + '" alt="" style="width:100%;height:100%;object-fit:contain;">';
+        }
+    }
+
+    function initCompare(w) {
+        let drag = false;
+        function pos(x) {
+            const r = w.getBoundingClientRect();
+            const p = Math.min(Math.max((x - r.left) / r.width, 0), 1);
+            w.querySelector('.compare-before').style.clipPath = 'inset(0 ' + (100 - p * 100) + '% 0 0)';
+            w.querySelector('.compare-handle').style.left = (p * 100) + '%';
+        }
+        w.addEventListener('mousedown', e => { drag = true; pos(e.clientX); });
+        window.addEventListener('mousemove', e => { if (drag) pos(e.clientX); });
+        window.addEventListener('mouseup', () => { drag = false; });
+        w.addEventListener('touchstart', e => { drag = true; pos(e.touches[0].clientX); }, { passive: true });
+        window.addEventListener('touchmove', e => { if (drag) pos(e.touches[0].clientX); }, { passive: true });
+        window.addEventListener('touchend', () => { drag = false; });
+    }
+
+    /* ── Docs per product ── */
+    const docsData = {
+        solace: {
+            install: `<h2>Installation</h2>
+<p>Solace ships as a Hydra render delegate plugin. Drop it into your USD plugin path and register.</p>
+<h3>1. Set the environment</h3>
+<pre>set PXR_PLUGINPATH_NAME=C:\\path\\to\\solace\\</pre>
+<h3>2. Verify registration</h3>
+<pre>from pxr import Plug
+Plug.Registry().GetAllPlugins()</pre>
+<p>You should see <code>Solace</code> listed among the available Hydra render delegates.</p>
+<h3>3. Select renderer</h3>
+<pre>renderIndex = HdRenderIndex.New(HdSolaceRendererPlugin(), [])
+# or via usdview: --renderer Solace</pre>
+<p>Renderer ID: <code>Solace</code></p>`,
+
+            requirements: `<h2>Requirements</h2>
+<div class="kv">
+<div><span>GPU</span> <span>NVIDIA RTX</span></div>
+<div><span>Drivers</span> <span>≥ 595</span></div>
+<div><span>Rendering API</span> <span>DirectX 12</span></div>
+<div><span>Hgi</span> <span>OpenGL</span></div>
+<div><span>OS</span> <span>Windows</span></div>
+<div><span>USD</span> <span>26.03</span></div>
+</div>
+<p style="margin-top:16px;">Solace requires an NVIDIA RTX GPU with driver version 595 or later. The renderer uses DirectX 12 for GPU compute and ray tracing. Host application integration runs through the OpenGL Hgi backend.</p>`,
+
+            quickstart: `<h2>Quick Start</h2>
+<p>Open a USD stage with Solace as the active renderer.</p>
+<pre>usdview kitchen_set.usd --renderer Solace</pre>
+<p>Navigate the viewport. Solace begins path tracing immediately, converging progressively.</p>`,
+
+            clearcoat: `<h2>Clearcoat</h2>
+<p>The <code>clearcoat</code> parameter adds a dielectric coating layer on top of the base material. Values range from 0.0 (no coat) to 1.0 (full coat).</p>
+<div class="doc-img">[ clearcoat comparison render ]</div>
+<p>Clearcoat roughness is controlled independently via <code>clearcoatRoughness</code>. A low roughness produces a mirror-like automotive finish.</p>`,
+
+            opacity: `<h2>Opacity</h2>
+<p>Controls surface transparency via the <code>opacity</code> parameter on <code>UsdPreviewSurface</code>.</p>
+<div class="doc-img">[ opacity 1.0 → 0.1 gradient render ]</div>
+<p>When opacity drops below 1.0, Solace traces refraction rays through the surface. The <code>ior</code> parameter controls the index of refraction for transmitted rays.</p>`,
+
+            roughness: `<h2>Roughness</h2>
+<p>The <code>roughness</code> parameter controls microfacet scattering on the surface. 0.0 is a perfect mirror, 1.0 is fully diffuse.</p>
+<div class="doc-img">[ roughness sweep render: 0.0 → 1.0 ]</div>
+<p>Roughness is applied via a GGX distribution. Anisotropy is not currently supported.</p>`,
+
+            'sample-viewer': `<h2>Sample: USD Viewer</h2>
+<p>Coming soon.</p>`,
+
+            'sample-benchmark': `<h2>Sample: Benchmark App</h2>
+<p>Coming soon.</p>`
+        }
+    };
+
+    function switchDoc(product, id, el) {
+        const content = document.getElementById(product + '-docs-content');
+        const data = docsData[product];
+        if (content && data && data[id]) {
+            content.innerHTML = data[id];
+        } else {
+            content.innerHTML = '<p style="color:var(--fg-dim);">Coming soon.</p>';
+        }
+        el.closest('.docs-sidebar').querySelectorAll('li').forEach(li => li.classList.remove('active'));
+        el.classList.add('active');
+    }
+</script>
+</body>
+</html>
